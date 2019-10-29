@@ -24,9 +24,10 @@ import sys
 
 class SelBot:
 
-	def __init__(self, name='',output_path=''):
+	def __init__(self, name='',output_path='',log_path=''):
 		#self.down_path = '/home/vlad/Downloads/'+name+'/'
 		self.output_path = output_path
+		self.log_path = log_path
 		self.name = name
 		logging.info('Make selected: '+str(name))
 	def open_ff(self):
@@ -49,8 +50,8 @@ class SelBot:
 		# self.driver = webdriver.Firefox(executable_path = 'geckodriver/geckodriver.exe',firefox_profile=profile)
 		self.driver = webdriver.Firefox(executable_path='/home/vlad/selenium/geckodriver', options=options, firefox_profile=profile, firefox_binary='/usr/bin/firefox'
 										)
-		self.soft_pause = 300
-		self.long_pause = 1000
+		self.soft_pause = 200
+		self.long_pause = 500
 		self.eps = 5
 	def close_ff(self):
 		self.driver.quit()
@@ -124,11 +125,15 @@ class SelBot:
 		# iterate through each page
 
 		for page_id in range(pages):
-			if page_id % self.soft_pause == 0:
+		
+		
+			status = 'ERROR'
+			page_num = ''
+			if (page_id % self.soft_pause == 0) and page_id>0:
 				slp = 60
 				self.eps+=1
-			elif page_id % self.long_pause == 0:
-				slp = 120
+			elif (page_id % self.long_pause == 0) and page_id>0 :
+				slp = 360
 			else:
 				slp = 3
 			tts = random.randint(slp, slp+self.eps)
@@ -140,21 +145,48 @@ class SelBot:
 				page_num = self.driver.current_url.split('/')[-1]
 				with open(self.output_path+'{}/page_{}.html'.format(self.name, page_num), 'w') as f:
 					f.write(self.driver.page_source)
-				status = 'DONE'
-				print(self.driver.current_url,status)
-				
-				
+					status = 'DONE'
+					
+				msg = self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts)
+				print(msg)
+				logging.info(msg)
 				time.sleep(tts)
-				logging.info('Page: '+str(page_id+1)+':'+'status-'+status+'; slp. time- '+str(tts))
-			except Exception as e:
-				status = 'ERROR'
-				print('Error at:', page_id, '\nError details:', e)
 				
-				logging.error('Page: '+str(page_id+1)+':'+'status-'+status
-								+'; slp. time- '+str(tts)
-								+';error- '+str(e)
-								)
-				time.sleep(random.randint(5, 15))
+				#print('Checking pause option')
+			
+				while True:
+					with open('pause_at.txt','r') as f:
+						p = f.read()
+					
+					if page_num == p:
+						print('Process is on pause ...')
+						time.sleep(10)
+					else:
+						break
+				
+				
+			except Exception as e:
+				
+				msg = self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts) +'\nError details:' +str(e)
+				print(msg)
+				logging.error(msg)
+				
+				if page_id >1:
+					while True:
+						with open('pause_err.txt','r') as f:
+							p = f.read()
+						
+						if p == 'yes':
+							print('Process is on pause due to the error!')
+							time.sleep(20)
+						else:
+							self.driver.execute_script("window.history.go(-2)")
+							with open('pause_err.txt','w') as f:
+								f.write('yes')
+							break
+					
+					
+				#time.sleep(random.randint(5, 15))
 				
 			
 #			 self.driver.save_screenshot('headless_firefox_test.png')
@@ -235,12 +267,20 @@ if __name__ == '__main__':
 		try:
 			name = sys.argv[1]
 			pages = int(sys.argv[2])
-			output_path = '/home/vlad/csv/Cars/'
+			#output_path = '/home/vlad/csv/Cars/'
+			output_path = '/home/vlad/sc/csv/'
+			log_path = '/home/vlad/sc/logs/'
 			if not os.path.exists(output_path+name):
 				print('Creating folder')
 				os.makedirs(output_path+name)
 			print('Starting work for {} with {} pages'.format(name, pages))
-			bot = SelBot(name,output_path=output_path)
+			
+			#reset default parameters
+			with open('pause_at.txt','w') as f:
+				f.write('-1')
+			with open('pause_err.txt','w') as f:
+				f.write('yes')
+			bot = SelBot(name,output_path=output_path,log_path=log_path)
 			bot.run_process(pages=pages)
 			print('terminal is active')
 		except:
