@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.proxy import Proxy, ProxyType
 from bs4 import BeautifulSoup
 import json
 import datetime
@@ -18,37 +19,64 @@ import logging.config
 from random import randint
 import multiprocessing as mp
 from pprint import pprint
+import ipdb
 
 import sys
 
 
 class SelBot:
 
-	def __init__(self, name='',output_path='',log_path=''):
+	def __init__(self, name='',output_path='',log_path='',proxy_f = True,home_path=''):
 		#self.down_path = '/home/vlad/Downloads/'+name+'/'
 		self.output_path = output_path
 		self.log_path = log_path
 		self.name = name
+		self.home_path = home_path
+		self.proxy_f = proxy_f
+		
 		logging.info('Make selected: '+str(name))
 	def open_ff(self):
 		logging.info('Starting new session')
 		
 		options = Options()
 		options.headless = True
+		
+		
+		with open('nogit/pass.txt','r') as f:
+			creds = f.read().splitlines()
+		HOST = creds[0]
+		PORT = creds[1]
+		USER = creds[2]
+		PASSWD = creds[3]
+			
 		profile = webdriver.FirefoxProfile()
+		
+		#ipdb.set_trace()
+		if self.proxy_f:
+			profile.set_preference("network.proxy.type", 1)
 
+			profile.set_preference("network.proxy.http", HOST)
+
+			profile.set_preference("network.proxy.http_port", PORT)
+
+			profile.set_preference("network.proxy.socks_username", USER)
+
+			profile.set_preference("network.proxy.socks_password", PASSWD)
+
+			 
+
+			profile.update_preferences()
 		#profile.set_preference("browser.download.folderList", 2)
 		#profile.set_preference("browser.download.manager.showWhenStarting", False)
 		#profile.set_preference("browser.download.dir", self.down_path)
 
 		#with open('profile.txt', 'r') as f:
 		#	profile_string = f.read().split(',')
-		#import ipdb
-		#ipdb.set_trace()
+
 		#profile.set_preference(*profile_string)
 
 		# self.driver = webdriver.Firefox(executable_path = 'geckodriver/geckodriver.exe',firefox_profile=profile)
-		self.driver = webdriver.Firefox(executable_path='/home/vlad/selenium/geckodriver', options=options, firefox_profile=profile, firefox_binary='/usr/bin/firefox'
+		self.driver = webdriver.Firefox(executable_path=self.home_path+'selenium/geckodriver', options=options, firefox_profile=profile, firefox_binary='/usr/bin/firefox'
 										)
 		self.soft_pause = 200
 		self.long_pause = 500
@@ -58,9 +86,9 @@ class SelBot:
 		logging.info('All work done, closing the session')
 
 	def test_(self):
-		self.driver.get('https://www.duckduckgo.com')
+		self.driver.get('https://ifconfig.co/')
 
-		self.driver.save_screenshot('headless_firefox_test.png')
+		self.driver.save_screenshot('png/ifconfig.png')
 
 	def main_page(self):
 
@@ -110,7 +138,19 @@ class SelBot:
 #		 ActionChains(self.driver).move_to_element(login_button).click(login_button).perform()
 #		 time.sleep(2)
 
+
+	def take_screenshot(self):
+	
+		screen_path = 'headless_firefox_test.png'
+		#el = self.driver.find_element_by_tag_name('body')
+		#el.screenshot(screen_path)
+		#el.screenshot(screen_path)
+		
+		self.driver.save_screenshot(screen_path)
+		
 	def export_data(self, pages=10, start_with=None):
+	
+		
 		if start_with is not None:
 			url = 'https://www.salvageautosauction.com/price_history/{}'.format(
 				start_with)
@@ -118,15 +158,19 @@ class SelBot:
 
 			self.driver.execute_script(
 				"javascript:gotoPage(this, '{}')".format(url))
+			#path = 'headless_firefox_test.png'
 			# self.driver.get(url)
-			# self.driver.save_screenshot('headless_firefox_test.png')
+			#el = self.driver.find_element_by_tag_name('body')
+			#el.screenshot(path)
+			# self.driver.save_screenshot(path)
 			# return 0
 			time.sleep(random.randint(1, 2))
 		# iterate through each page
 
-		for page_id in range(pages):
+		page_id  =0
+		while page_id <=pages:
 		
-		
+			pr_m = True
 			status = 'ERROR'
 			page_num = ''
 			if (page_id % self.soft_pause == 0) and page_id>0:
@@ -140,6 +184,7 @@ class SelBot:
 			try:
 				
 				# click next page
+				time.sleep(tts)
 				next_page = self.driver.find_element_by_class_name('item.next')
 				next_page.click()
 				page_num = self.driver.current_url.split('/')[-1]
@@ -147,10 +192,10 @@ class SelBot:
 					f.write(self.driver.page_source)
 					status = 'DONE'
 					
-				msg = self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts)
+				msg = '('+str(page_id)+')'+self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts)
 				print(msg)
 				logging.info(msg)
-				time.sleep(tts)
+				
 				
 				#print('Checking pause option')
 			
@@ -164,100 +209,46 @@ class SelBot:
 					else:
 						break
 				
-				
+				page_id+=1
 			except Exception as e:
 				
-				msg = self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts) +'\nError details:' +str(e)
+				msg = '('+str(page_id)+')'+self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts) +'\nError details:' +str(e)
 				print(msg)
 				logging.error(msg)
+				self.take_screenshot()
 				
-				if page_id >1:
+				if page_id >1 and 'item.next' in msg:
 					while True:
 						with open('pause_err.txt','r') as f:
 							p = f.read()
 						
 						if p == 'yes':
-							print('Process is on pause due to the error!')
+							if pr_m:
+								print('Process is on pause due to the error!')
+								pr_m = False
 							time.sleep(20)
 						else:
 							self.driver.execute_script("window.history.go(-2)")
 							with open('pause_err.txt','w') as f:
 								f.write('yes')
 							break
-					
-					
-				#time.sleep(random.randint(5, 15))
-				
-			
-#			 self.driver.save_screenshot('headless_firefox_test.png')
-#			 if unlog_f:
-#				 break
-#			 if first_url_flg:
-#				 links_obj = self.driver.find_elements_by_partial_link_text('')
-#				 links =[]
-#				 for link in links_obj:
-#					 try:
-#						 url_to_app = link.get_attribute("href")
-#						 if 'https' in url_to_app:
-#							 links.append(url_to_app)
-#					 except:
-#						 continue
-#				 first_url_flg =False
-
-#			 for date in self.date_month_year:
-#				 if unlog_f:
-#					 break
-#			 #for date in tqdm(part_date):
-#				 for country in self.geos:
-#					 if unlog_f:
-#						 break
-#					 try:
-#						 req_url = 'https://www.semrush.com/analytics/traffic/subdomains/{}?dateStart={}&country={}'.format(domain,date,country)
-#						 if not silence:
-#							 print('-'*20,'\nCountry: ',country,'\nData: ',date,'\nDomain: ',domain,'URL: ', req_url)
-#						 #domain  = 'africa.dnvgl.com'
-#						 #date = '2017-02-01'
-#						 #country = 'cn'
-
-#						 self.driver.get(req_url)
-#						 time.sleep(2)
-#						 try:
-#							 logging_error = self.driver.find_element_by_class_name('RLDDG')
-#							 if 'This report is available for users with the' in logging_error.get_attribute('innerHTML'):
-#								 print('Session logged out')
-#								 unlog_f = True
-#								 break
-#						 except:
-#							 pass
-#						 download_button = self.driver.find_element_by_class_name("sc-1_4_5-btn__size_xs")
-#						 ActionChains(self.driver).move_to_element(download_button).click(download_button).perform()
-#						 time.sleep(2)
-#						 list_of_files = glob.glob(self.down_path+'*')
-#						 latest_file = max(list_of_files, key=os.path.getctime)
-#						 if country =='':
-#							 country = 'global'
-#						 new_name = self.down_path+domain+'_'+date+'_'+country+'.csv'
-#						 os.rename(latest_file, new_name)
-#						 if not silence:
-#							 print('Result: ',new_name, ' - Downloaded')
-#						 time.sleep(2)
-#						 #open a random link
-#						 l= links[randint(0, len(links)-1)]
-#						 self.driver.get(l)
-#						 time.sleep(2)
-#					 except Exception as e:
-#						 if not silence:
-#							 print('Result: ',e)
-#						 continue
 
 	def run_process(self, pages=1, start_with=None):
 		# create logger
-		logging.config.fileConfig("logg_config.ini")
-		self.open_ff()
-		self.main_page()
-		self.export_data(pages=pages, start_with=start_with)
-		self.close_ff()
-		print('All work done')
+		try:
+			logging.config.fileConfig("logg_config.ini")
+			self.open_ff()
+			self.test_()
+			self.main_page()
+			self.export_data(pages=pages, start_with=start_with)
+			print('All work done')
+		
+		except Exception as e:
+		 print('Error ',e)
+		
+		finally:
+			self.close_ff()
+
 
 
 if __name__ == '__main__':
@@ -267,12 +258,26 @@ if __name__ == '__main__':
 		try:
 			name = sys.argv[1]
 			pages = int(sys.argv[2])
+			proxy_f = bool(sys.argv[3])
 			#output_path = '/home/vlad/csv/Cars/'
-			output_path = '/home/vlad/sc/csv/'
-			log_path = '/home/vlad/sc/logs/'
+			with open('config/vars','r') as f:
+				home_path = f.read()
+			output_path = home_path+'csv/'
+			log_path = home_path+'logs/'
+			
+			if not os.path.exists(output_path):
+				print('Creating output folder')
+				os.makedirs(output_path)
+				
+			if not os.path.exists(log_path):
+				print('Creating log folder')
+				os.makedirs(log_path)
+
 			if not os.path.exists(output_path+name):
-				print('Creating folder')
+				print('Creating make folder')
 				os.makedirs(output_path+name)
+				
+			
 			print('Starting work for {} with {} pages'.format(name, pages))
 			
 			#reset default parameters
@@ -280,7 +285,7 @@ if __name__ == '__main__':
 				f.write('-1')
 			with open('pause_err.txt','w') as f:
 				f.write('yes')
-			bot = SelBot(name,output_path=output_path,log_path=log_path)
+			bot = SelBot(name,output_path=output_path,log_path=log_path,proxy_f=proxy_f,home_path=home_path)
 			bot.run_process(pages=pages)
 			print('terminal is active')
 		except:
