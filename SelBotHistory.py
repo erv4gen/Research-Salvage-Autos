@@ -76,7 +76,14 @@ class SelBot:
 		#profile.set_preference(*profile_string)
 
 		# self.driver = webdriver.Firefox(executable_path = 'geckodriver/geckodriver.exe',firefox_profile=profile)
-		self.driver = webdriver.Firefox(executable_path=self.home_path+'selenium/geckodriver', options=options, firefox_profile=profile, firefox_binary='/usr/bin/firefox'
+		driver_dir = self.home_path.strip()+'selenium/geckodriver'
+		print('Searching for driver in:',driver_dir)
+		#ipdb.set_trace()
+		self.driver = webdriver.Firefox(
+#executable_path=driver_dir,
+		 options=options
+				,firefox_profile=profile
+			,firefox_binary='/usr/bin/firefox'
 										)
 		self.soft_pause = 200
 		self.long_pause = 500
@@ -168,6 +175,7 @@ class SelBot:
 		# iterate through each page
 
 		page_id  =0
+		print('files will be saved to: ',self.output_path)
 		while page_id <=pages:
 		
 			pr_m = True
@@ -258,13 +266,14 @@ if __name__ == '__main__':
 		try:
 			name = sys.argv[1]
 			pages = int(sys.argv[2])
-			proxy_f = bool(sys.argv[3])
+			proxy_f = False#bool(sys.argv[3])
 			#output_path = '/home/vlad/csv/Cars/'
 			with open('config/vars','r') as f:
 				home_path = f.read()
-			output_path = home_path+'csv/'
-			log_path = home_path+'logs/'
+			output_path = home_path.strip()+'csv/'
+			log_path = home_path.strip()+'logs/'
 			
+			print('Use proxy',proxy_f)
 			if not os.path.exists(output_path):
 				print('Creating output folder')
 				os.makedirs(output_path)
