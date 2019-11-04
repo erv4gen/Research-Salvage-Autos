@@ -122,8 +122,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-png
-config
-logs
-csv
-nogit
+png/*
+config/*
+logs/*
+csv/*
+nogit/*

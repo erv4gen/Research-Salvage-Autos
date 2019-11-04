@@ -1,2 +1,5 @@
 selenium
 bs4
+pandas
+tqdm
+ipdb
