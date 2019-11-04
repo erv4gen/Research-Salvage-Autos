@@ -77,17 +77,17 @@ class SelBot:
 
 		# self.driver = webdriver.Firefox(executable_path = 'geckodriver/geckodriver.exe',firefox_profile=profile)
 		driver_dir = self.home_path.strip()+'selenium/geckodriver'
-		print('Searching for driver in:',driver_dir)
+		#print('Searching for driver in:',driver_dir)
 		#ipdb.set_trace()
 		self.driver = webdriver.Firefox(
 #executable_path=driver_dir,
 		 options=options
-				,firefox_profile=profile
+			,firefox_profile=profile
 			,firefox_binary='/usr/bin/firefox'
 										)
 		self.soft_pause = 200
 		self.long_pause = 500
-		self.eps = 5
+		self.eps = 4
 	def close_ff(self):
 		self.driver.quit()
 		logging.info('All work done, closing the session')
@@ -97,22 +97,35 @@ class SelBot:
 
 		self.driver.save_screenshot('png/ifconfig.png')
 
-	def main_page(self):
+	def main_page(self,year_to_export):
 
 		logging.info('Opening main page')
 		# open url
 		self.driver.get('https://www.salvageautosauction.com/price_history/')
 		time.sleep(1)
-
-
-		# select all pages
+		self.yte = year_to_export
+		# select from year
 		select = self.driver.find_element_by_name('cboFrYear')
+		options = [x for x in select.find_elements_by_tag_name("option")]
+		print('Starting work for {}; year:{}'.format(name,year_to_export))
+		#create a folder for a year
+		self.downlad_folder = self.output_path+'{}/{}'.format(self.name,year_to_export)
+		if not os.path.exists(self.downlad_folder):
+			print('Creating output year folder')
+			os.makedirs(self.downlad_folder)
+		for element in options:
+			if element.get_attribute("value") == year_to_export: #'1900'
+				element.click()
+
+
+		# select to year 
+		select = self.driver.find_element_by_name('cboToYear')
 		options = [x for x in select.find_elements_by_tag_name("option")]
 
 		for element in options:
-			if element.get_attribute("value") == '1900':
+			if element.get_attribute("value") == year_to_export: #'1900'
 				element.click()
-
+		
 		# Select category
 		select = self.driver.find_element_by_name('cboMake')
 		options = [x for x in select.find_elements_by_tag_name("option")]
@@ -127,7 +140,7 @@ class SelBot:
 		sumbit.click()
 
 		# save page
-		with open(self.output_path+'{}/page_1.html'.format(self.name), 'w') as f:
+		with open('{}/page_1.html'.format(self.downlad_folder), 'w') as f:
 			f.write(self.driver.page_source)
 #		 for index in range(len(select.options)):
 #			 select = Select(self.driver.find_element_by_name('Acura'))
@@ -155,7 +168,7 @@ class SelBot:
 		
 		self.driver.save_screenshot(screen_path)
 		
-	def export_data(self, pages=10, start_with=None):
+	def export_data(self, start_with=None):
 	
 		
 		if start_with is not None:
@@ -173,10 +186,10 @@ class SelBot:
 			# return 0
 			time.sleep(random.randint(1, 2))
 		# iterate through each page
-
-		page_id  =0
-		print('files will be saved to: ',self.output_path)
-		while page_id <=pages:
+		
+		max_pages = 2000
+		print('files will be saved to: ',self.downlad_folder)
+		for page_id in range(max_pages):
 		
 			pr_m = True
 			status = 'ERROR'
@@ -187,7 +200,7 @@ class SelBot:
 			elif (page_id % self.long_pause == 0) and page_id>0 :
 				slp = 360
 			else:
-				slp = 3
+				slp = 2
 			tts = random.randint(slp, slp+self.eps)
 			try:
 				
@@ -196,59 +209,65 @@ class SelBot:
 				next_page = self.driver.find_element_by_class_name('item.next')
 				next_page.click()
 				page_num = self.driver.current_url.split('/')[-1]
-				with open(self.output_path+'{}/page_{}.html'.format(self.name, page_num), 'w') as f:
+				with open('{}/page_{}.html'.format(self.downlad_folder,page_num), 'w') as f:
 					f.write(self.driver.page_source)
 					status = 'DONE'
 					
-				msg = '('+str(page_id)+')'+self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts)
+				msg = '('+self.yte+'-'+str(page_id)+')'+self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts)
 				print(msg)
 				logging.info(msg)
 				
 				
 				#print('Checking pause option')
 			
-				while True:
-					with open('pause_at.txt','r') as f:
-						p = f.read()
-					
-					if page_num == p:
-						print('Process is on pause ...')
-						time.sleep(10)
-					else:
-						break
-				
-				page_id+=1
+				#while True:
+				#	with open('pause_at.txt','r') as f:
+				#		p = f.read()
+				#	
+				#	if page_num == p:
+				#		print('Process is on pause ...')
+				#		time.sleep(10)
+				#	else:
+				#		break
+				#
+				#page_id+=1
 			except Exception as e:
 				
-				msg = '('+str(page_id)+')'+self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts) +'\nError details:' +str(e)
+				msg = '('+self.yte+'-'+str(page_id)+')'+self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts) +'\nError details:' +str(e)
 				print(msg)
 				logging.error(msg)
 				self.take_screenshot()
 				
 				if page_id >1 and 'item.next' in msg:
-					while True:
-						with open('pause_err.txt','r') as f:
-							p = f.read()
-						
-						if p == 'yes':
-							if pr_m:
-								print('Process is on pause due to the error!')
-								pr_m = False
-							time.sleep(20)
-						else:
-							self.driver.execute_script("window.history.go(-2)")
-							with open('pause_err.txt','w') as f:
-								f.write('yes')
-							break
-
-	def run_process(self, pages=1, start_with=None):
+					#while True:
+					#	with open('pause_err.txt','r') as f:
+					#		p = f.read()
+					#	
+					#	if p == 'yes':
+					#		if pr_m:
+					#			print('Process is on pause due to the error!')
+					#			pr_m = False
+					#		time.sleep(20)
+					#	else:
+					#		self.driver.execute_script("window.history.go(-2)")
+					#		with open('pause_err.txt','w') as f:
+					#			f.write('yes')
+					#		break
+					break
+				else: continue
+					
+					
+	def run_process(self,years):
 		# create logger
+		
 		try:
 			logging.config.fileConfig("logg_config.ini")
 			self.open_ff()
 			self.test_()
-			self.main_page()
-			self.export_data(pages=pages, start_with=start_with)
+			print('Years to export:',str(years))
+			for year in years:
+				self.main_page(year_to_export = year)
+				self.export_data()
 			print('All work done')
 		
 		except Exception as e:
@@ -265,15 +284,19 @@ if __name__ == '__main__':
 	else:
 		try:
 			name = sys.argv[1]
-			pages = int(sys.argv[2])
+			#pages = int(sys.argv[2])
 			proxy_f = False#bool(sys.argv[3])
+			year_start = sys.argv[2]
+			year_end = sys.argv[3]
+			years = [str(y) for y in range(int(year_start),int(year_end)+1)]	
+			years.reverse()
 			#output_path = '/home/vlad/csv/Cars/'
 			with open('config/vars','r') as f:
 				home_path = f.read()
 			output_path = home_path.strip()+'csv/'
 			log_path = home_path.strip()+'logs/'
 			
-			print('Use proxy',proxy_f)
+			print('Use proxy: ',proxy_f)
 			if not os.path.exists(output_path):
 				print('Creating output folder')
 				os.makedirs(output_path)
@@ -287,15 +310,15 @@ if __name__ == '__main__':
 				os.makedirs(output_path+name)
 				
 			
-			print('Starting work for {} with {} pages'.format(name, pages))
-			
 			#reset default parameters
 			with open('pause_at.txt','w') as f:
 				f.write('-1')
 			with open('pause_err.txt','w') as f:
 				f.write('yes')
 			bot = SelBot(name,output_path=output_path,log_path=log_path,proxy_f=proxy_f,home_path=home_path)
-			bot.run_process(pages=pages)
+			
+			
+			bot.run_process(years)
 			print('terminal is active')
 		except:
 			print("Exception occured:", traceback.format_exc())
