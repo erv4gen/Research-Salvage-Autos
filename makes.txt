@@ -22,12 +22,12 @@
 
 #Isuzu 91
 
-Ford 5105  
-#Chevrolet 4680 (3188) 
+#Ford 5105  
+#Chevrolet 4680
 
-Honda 5364 
+#Honda 5364 
 
-Nissan 4628
+#Nissan 4628
 
 
 #Hyundai 2238

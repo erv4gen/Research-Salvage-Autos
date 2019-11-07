@@ -85,9 +85,7 @@ class SelBot:
 			,firefox_profile=profile
 			,firefox_binary='/usr/bin/firefox'
 										)
-		self.soft_pause = 200
-		self.long_pause = 500
-		self.eps = 4
+
 	def close_ff(self):
 		self.driver.quit()
 		logging.info('All work done, closing the session')
@@ -170,7 +168,9 @@ class SelBot:
 		
 	def export_data(self, start_with=None):
 	
-		
+		self.soft_pause = 300
+		self.long_pause = 900
+		self.eps = 4
 		if start_with is not None:
 			url = 'https://www.salvageautosauction.com/price_history/{}'.format(
 				start_with)
@@ -213,7 +213,7 @@ class SelBot:
 					f.write(self.driver.page_source)
 					status = 'DONE'
 					
-				msg = '('+self.yte+'-'+str(page_id)+')'+self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts)
+				msg = '('+self.yte+'-'+str(page_id)+' of '+self.last_year+')'+self.driver.current_url+':'+' name-'+self.name+' ;status-'+status+'; slp. time- '+str(tts)
 				print(msg)
 				logging.info(msg)
 				
@@ -233,7 +233,7 @@ class SelBot:
 				#page_id+=1
 			except Exception as e:
 				
-				msg = '('+self.yte+'-'+str(page_id)+')'+self.driver.current_url+':'+' status-'+status+'; slp. time- '+str(tts) +'\nError details:' +str(e)
+				msg = '('+self.yte+'-'+str(page_id)+' of '+self.last_year+')'+self.driver.current_url+':'+' name-'+self.name+' ;status-'+status+'; slp. time- '+str(tts) +'\nError details:' +str(e)
 				print(msg)
 				logging.error(msg)
 				self.take_screenshot()
@@ -265,9 +265,11 @@ class SelBot:
 			self.open_ff()
 			self.test_()
 			print('Years to export:',str(years))
+			self.last_year = years[-1]
 			for year in years:
 				self.main_page(year_to_export = year)
 				self.export_data()
+				time.sleep(15)
 			print('All work done')
 		
 		except Exception as e:
