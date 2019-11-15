@@ -127,3 +127,5 @@ config/*
 logs/*
 csv/*
 nogit/*
+*.png
+*.txt
