@@ -1,12 +1,12 @@
 from SelBot import SelBot
 import sys , os , traceback , logging ,time , glob
 class SelBotCarFax(SelBot):
-	def __init__(self,model,year,name,output_path,log_path,proxy_f,home_path):
-		
-		super().__init__(name,output_path,log_path,proxy_f,home_path)
-		self.model = model
-		self.year = year 
-	def main_page(self):
+	def __init__(self,models,years,name,output_path,log_path,proxy_f,home_path):
+		super().__init__(name,output_path,log_path,proxy_f,home_path) 
+		self.models = models
+		self.years = years
+
+	def save_page(self,model,year):
 		self.driver.get('https://www.carfax.com/car-research')
 		
 		#select make
@@ -15,27 +15,32 @@ class SelBotCarFax(SelBot):
 		
 		#select model
 		select = self.driver.find_element_by_xpath("//div[contains(text(),'Choose a Model')]").click()
-		select = self.driver.find_element_by_xpath(f"//ul/li[contains(text(),'{self.model}')]").click()
+		select = self.driver.find_element_by_xpath(f"//ul/li[contains(text(),'{model}')]").click()
 
 		#select year
 		select = self.driver.find_element_by_xpath("//div[contains(text(),'Choose a Year')]").click()
-		select = self.driver.find_element_by_xpath(f"//ul/li[contains(text(),'{self.year}')]").click()
+		select = self.driver.find_element_by_xpath(f"//ul/li[contains(text(),'{year}')]").click()
 
 		#select go
 		select = self.driver.find_element_by_xpath("//button[contains(text(),'Go')]").click()
 
 		
 		self.take_screenshot()
-		time.sleep(1)
-		with open('{}/{}/{}_{}_{}.html'.format(self.output_path,self.name,self.name,self.model,self.year), 'w') as f:
+		
+		with open('{}/{}/{}_{}_{}.html'.format(self.output_path,self.name,self.name,model,year), 'w') as f:
 			f.write(self.driver.page_source)
 		print('DONE!')
+		time.sleep(1)
 	def run_process(self,name):
 		try:
 			logging.config.fileConfig("logg_config.ini")
 			self.open_ff()
 			#self.test_()
-			self.main_page()
+			for model in self.models:
+				for year in self.years:
+					print('Make/Model/Year: ',make,'/', model,'/',year)
+					self.save_page(model,year)
+					time.sleep(1)
 		
 		except Exception as e:
 			print('Error ',e)
@@ -43,7 +48,7 @@ class SelBotCarFax(SelBot):
 		finally:
 			self.close_ff()
 
-def run_selenium(name,model,year):
+def run_selenium(name,models,years):
 	proxy_f = False#bool(sys.argv[3])
 
 	with open('config/vars','r') as f:
@@ -69,7 +74,7 @@ def run_selenium(name,model,year):
 	
 	
 
-	bot = SelBotCarFax(name=name,model=model,year=year
+	bot = SelBotCarFax(name=name,models=models,years=years
 	
 	,output_path=output_path
 	,log_path=log_path,proxy_f=proxy_f,home_path=home_path
@@ -91,11 +96,9 @@ if __name__ == '__main__':
 		
 
 			print('Starting for make ', make)
-			for model in make_model[make]:
-				for year in years:
-					print('Make/Year:', model,'/',year)
-					run_selenium(make,model,year)
-					time.sleep(1)
+			
+			run_selenium(make,make_model[make],years)
+			time.sleep(5)
 
 		print('terminal is active')
 	except:
