@@ -38,9 +38,11 @@ class SelBotCarFax(SelBot):
 			#self.test_()
 			for model in self.models:
 				for year in self.years:
-					print('Make/Model/Year: ',make,'/', model,'/',year)
-					self.save_page(model,year)
-					time.sleep(1)
+					try:
+						print('Make/Model/Year: ',make,'/', model,'/',year)
+						self.save_page(model,year)
+					except:
+						time.sleep(1)
 		
 		except Exception as e:
 			print('Error ',e)
