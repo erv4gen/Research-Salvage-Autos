@@ -120,12 +120,15 @@ venv.bak/
 dmypy.json
 
 # Pyre type checker
+.vscode/
 .pyre/
 input/
-png/*
-config/*
-logs/*
-csv/*
-nogit/*
+png/
+config/
+logs/
+csv/
+nogit/
 *.png
 *.txt
+util/
+var/
