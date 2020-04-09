@@ -1,10 +1,13 @@
 selenium
 bs4
 numpy
-pandas
+pandas=0.23.4
 scipy
 tqdm
 uszipcode
 matplotlib
 xlrd
-git+https://github.com/erv4gen/Tools-DataProcessing.git#egg=DataTools
+statsmodels
+seaborn
+pymatch
+git+git://github.com/erv4gen/Tools-DataProcessing.git#egg=DataTools
