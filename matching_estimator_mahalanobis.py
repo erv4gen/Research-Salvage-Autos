@@ -33,24 +33,29 @@ with open('nogit\\path','r') as f:
 #set up path
 Temp.set_path(path_to_csv +'SC-temp\\')
 
+
+
+model_name = '20p_500k1m'
 #load input files
 car_demo_joined = Temp.load_obj('car_demo_joined')
 
-
-#label big cities - ones with population more than 1M
-car_demo_joined.loc[car_demo_joined['CENSUS_closest']<1e6 , 'is_big_city'] = 0
-car_demo_joined.loc[car_demo_joined['CENSUS_closest']>1e6 , 'is_big_city'] = 1
+#label big cities
+smalb = 5e5
+big_b = 1e6
+car_demo_joined.loc[car_demo_joined['CENSUS_closest']<smalb , 'is_big_city'] = 0
+car_demo_joined.loc[car_demo_joined['CENSUS_closest']>big_b, 'is_big_city'] = 1
+car_demo_joined = car_demo_joined.dropna(subset = ['is_big_city'])
 
 
 #load filtering results
-match_null = Temp.load_obj('expected_match_indexed')
+match_null = Temp.load_obj('expected_match_indexed_'+model_name)
 
 #filter out rows without match
 match_e = match_null.loc[match_null.map(lambda x: len(x)>0)]
 
 
 #expected match
-columns_to_match = ['Actual_Cash_Value_adj','Odometer_Replace','Original_MSRP_mean']
+columns_to_match = ['Actual_Cash_Value_adj','Odometer_Replace']
 
 #calculate covariance
 cov = np.cov(car_demo_joined[columns_to_match].dropna(how='any').values.T)
@@ -88,13 +93,13 @@ mahalanobis_match = (match_e
 
 
 #save output
-Temp.save_obj(mahalanobis_match,'mahalanobis_match')
+Temp.save_obj(mahalanobis_match,'mahalanobis_match_'+model_name)
 
 
-mahalanobis_match = Temp.load_obj('mahalanobis_match')
+mahalanobis_match = Temp.load_obj('mahalanobis_match_'+model_name)
 
 #calculate difference between small and the large cities
-mahalanobis_match_diff = mahalanobis_match.diff(axis=1).dropna(axis=1).abs()
+mahalanobis_match_diff = mahalanobis_match.diff(axis=1).dropna(axis=1)#.abs()
 
 #calc statistics
 print(mahalanobis_match_diff.agg(['mean','std']) ,'\nt-test p value:'
