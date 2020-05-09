@@ -34,21 +34,17 @@ with open('nogit\\path','r') as f:
 Temp.set_path(path_to_csv +'SC-temp\\')
 
 
+model_name = sys.argv[1]
+# model_name = '20p_500k1m'
 
-model_name = '20p_500k1m'
+print('Model name: ',model_name)
 #load input files
 car_demo_joined = Temp.load_obj('car_demo_joined')
 
-#label big cities
-smalb = 5e5
-big_b = 1e6
-car_demo_joined.loc[car_demo_joined['CENSUS_closest']<smalb , 'is_big_city'] = 0
-car_demo_joined.loc[car_demo_joined['CENSUS_closest']>big_b, 'is_big_city'] = 1
-car_demo_joined = car_demo_joined.dropna(subset = ['is_big_city'])
 
 
 #load filtering results
-match_null = Temp.load_obj('expected_match_indexed_'+model_name)
+match_null = Temp.load_obj('matched_candidates_'+model_name)
 
 #filter out rows without match
 match_e = match_null.loc[match_null.map(lambda x: len(x)>0)]
@@ -63,6 +59,9 @@ cov = np.cov(car_demo_joined[columns_to_match].dropna(how='any').values.T)
 #inverse covariance
 inv_covmat = np.linalg.inv(cov)
 
+pct_match = ['Actual_Cash_Value_adj','Odometer_Replace']
+
+compare_columns = pct_match + ['Price_Sold_or_Highest_Bid_adj']
 def mahalanobis_distance(idx):
     '''
     The method calculates the Mahalanobis between matching value and candidates and select the
@@ -80,15 +79,16 @@ def mahalanobis_distance(idx):
     for i in range(candidates.shape[0]):
         d= np.append( mahalanobis(sc_tm,candidates[i,:],inv_covmat) ,d)
     closest_match =cand_ids[d.argmin()]
-    return car_demo_joined.loc[closest_match,'Price_Sold_or_Highest_Bid_adj']
+    return car_demo_joined.loc[closest_match,compare_columns]
 
 print('Calculating Mahalanobis distances ...')
 mahalanobis_match = (match_e
                 # .iloc[:10]
                 .to_frame()
-                .apply(mahalanobis_distance,axis=1).rename('mahalanobis_big_city')
-                .to_frame()
-                .join(car_demo_joined.Price_Sold_or_Highest_Bid_adj.rename('actual_value_small_city')))
+                .apply(mahalanobis_distance,axis=1)#.rename('mahalanobis_big_city')
+                #.to_frame()
+                .join(car_demo_joined[compare_columns],rsuffix='_matched')
+                )
 
 
 
@@ -96,7 +96,7 @@ mahalanobis_match = (match_e
 Temp.save_obj(mahalanobis_match,'mahalanobis_match_'+model_name)
 
 
-mahalanobis_match = Temp.load_obj('mahalanobis_match_'+model_name)
+# mahalanobis_match = Temp.load_obj('mahalanobis_match_'+model_name)
 
 #calculate difference between small and the large cities
 mahalanobis_match_diff = mahalanobis_match.diff(axis=1).dropna(axis=1)#.abs()

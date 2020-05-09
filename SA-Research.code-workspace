@@ -3,5 +3,8 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"settings": {
+		"python.pythonPath": "C:\\Users\\ervik\\Anaconda3\\envs\\sc-research\\python.exe"
+	}
 }
