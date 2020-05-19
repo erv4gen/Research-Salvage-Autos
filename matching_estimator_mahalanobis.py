@@ -18,8 +18,9 @@ from scipy.spatial.distance import mahalanobis
 from TempFolder.TempFolder import Temp
 from tqdm import tqdm
 
+from matching_estimator_est import models
 
-
+from tqdm import tqdm
   
 
 
@@ -33,75 +34,86 @@ with open('nogit\\path','r') as f:
 #set up path
 Temp.set_path(path_to_csv +'SC-temp\\')
 
+for model in tqdm(models):
+    try:
+        # model.model_name = sys.argv[1]
+        # model.model_name = '20p_500k1m'
 
-model_name = sys.argv[1]
-# model_name = '20p_500k1m'
+        #debug
+        if 'with_odm' in model.model_name:
+            print('Skipping ',model.model_name)
+            continue
+        ##############
+        else:
+            print('')
+            pass
 
-print('Model name: ',model_name)
-#load input files
-car_demo_joined = Temp.load_obj('car_demo_joined')
-
-
-
-#load filtering results
-match_null = Temp.load_obj('matched_candidates_'+model_name)
-
-#filter out rows without match
-match_e = match_null.loc[match_null.map(lambda x: len(x)>0)]
-
-
-#expected match
-columns_to_match = ['Actual_Cash_Value_adj','Odometer_Replace']
-
-#calculate covariance
-cov = np.cov(car_demo_joined[columns_to_match].dropna(how='any').values.T)
-
-#inverse covariance
-inv_covmat = np.linalg.inv(cov)
-
-pct_match = ['Actual_Cash_Value_adj','Odometer_Replace']
-
-compare_columns = pct_match + ['Price_Sold_or_Highest_Bid_adj']
-def mahalanobis_distance(idx):
-    '''
-    The method calculates the Mahalanobis between matching value and candidates and select the
-    closest ome
-    '''
-    #get vector to match
-    sc_tm = car_demo_joined.loc[idx.name,columns_to_match].values
-    
-    #get candidates vectors 
-    cand_ids = np.array([v for v in idx.values]).reshape(-1,)
-    candidates = car_demo_joined.loc[cand_ids,columns_to_match].values
-    
-    #iterage over each candidate and calculate the distance between two vectors
-    d = np.array([])
-    for i in range(candidates.shape[0]):
-        d= np.append( mahalanobis(sc_tm,candidates[i,:],inv_covmat) ,d)
-    closest_match =cand_ids[d.argmin()]
-    return car_demo_joined.loc[closest_match,compare_columns]
-
-print('Calculating Mahalanobis distances ...')
-mahalanobis_match = (match_e
-                # .iloc[:10]
-                .to_frame()
-                .apply(mahalanobis_distance,axis=1)#.rename('mahalanobis_big_city')
-                #.to_frame()
-                .join(car_demo_joined[compare_columns],rsuffix='_matched')
-                )
+        print('Model name: ',model.model_name)
+        #load input files
+        car_demo_joined = Temp.load_obj('car_demo_joined')
 
 
 
-#save output
-Temp.save_obj(mahalanobis_match,'mahalanobis_match_'+model_name)
+        #load filtering results
+        match_null = Temp.load_obj('matched_candidates_'+model.model_name)
+
+        #filter out rows without match
+        match_e = match_null.loc[match_null.map(lambda x: len(x)>0)]
 
 
-# mahalanobis_match = Temp.load_obj('mahalanobis_match_'+model_name)
+        #expected match
+        columns_to_match = model.pct_match #['Actual_Cash_Value_adj','Odometer_Replace']
 
-#calculate difference between small and the large cities
-mahalanobis_match_diff = mahalanobis_match.diff(axis=1).dropna(axis=1)#.abs()
+        print('Looking for match:', columns_to_match)
+        #calculate covariance
+        cov = np.cov(car_demo_joined[columns_to_match].dropna(how='any').values.T)
+        if len(cov.shape) <1:
+            cov = cov.reshape(-1,1)
+            print('Reshaping')
+        #inverse covariance
+        inv_covmat = np.linalg.inv(cov)
 
-#calc statistics
-print(mahalanobis_match_diff.agg(['mean','std']) ,'\nt-test p value:'
-, round(stats.ttest_1samp(mahalanobis_match_diff.values.reshape(-1,),0)[1],3)
-,'\n',mahalanobis_match.head())
+        compare_columns = model.pct_match + ['Price_Sold_or_Highest_Bid_adj']
+        def mahalanobis_distance(idx):
+            '''
+            The method calculates the Mahalanobis between matching value and candidates and select the
+            closest ome
+            '''
+            #get vector to match
+            sc_tm = car_demo_joined.loc[idx.name,columns_to_match].values
+            
+            #get candidates vectors 
+            cand_ids = np.array([v for v in idx.values]).reshape(-1,)
+            candidates = car_demo_joined.loc[cand_ids,columns_to_match].values
+            
+            #iterage over each candidate and calculate the distance between two vectors
+            d = np.array([])
+            for i in range(candidates.shape[0]):
+                d= np.append( mahalanobis(sc_tm,candidates[i,:],inv_covmat) ,d)
+            closest_match =cand_ids[d.argmin()]
+            return car_demo_joined.loc[closest_match,compare_columns]
+
+        print('Calculating Mahalanobis distances ...')
+        mahalanobis_match = (match_e
+                        # .iloc[:10]
+                        .to_frame()
+                        .apply(mahalanobis_distance,axis=1)#.rename('mahalanobis_big_city')
+                        #.to_frame()
+                        .join(car_demo_joined[compare_columns],rsuffix='_matched')
+                        )
+
+
+
+        #save output
+        Temp.save_obj(mahalanobis_match,'mahalanobis_match_'+model.model_name)
+
+        #calculate difference between small and the large cities
+        mahalanobis_match_diff = mahalanobis_match.diff(axis=1).dropna(axis=1)#.abs()
+
+        #calc statistics
+        print(mahalanobis_match_diff.agg(['mean','std']) ,'\nt-test p value:'
+        , round(stats.ttest_1samp(mahalanobis_match_diff.values.reshape(-1,),0)[1],3)
+        ,'\n',mahalanobis_match.head())
+
+    except Exception as e:
+        print(model.model_name+': Error: '+str(e))

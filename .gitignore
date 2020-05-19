@@ -132,3 +132,5 @@ nogit/
 *.txt
 util/
 var/
+
+tex/
