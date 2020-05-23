@@ -18,7 +18,7 @@ from scipy.spatial.distance import mahalanobis
 from TempFolder.TempFolder import Temp
 from tqdm import tqdm
 
-from matching_estimator_est import models
+from matching_estimator_est import models_dict , run_on
 
 from tqdm import tqdm
   
@@ -34,19 +34,19 @@ with open('nogit\\path','r') as f:
 #set up path
 Temp.set_path(path_to_csv +'SC-temp\\')
 
-for model in tqdm(models):
+for model in tqdm(models_dict[run_on]):
     try:
         # model.model_name = sys.argv[1]
         # model.model_name = '20p_500k1m'
 
         #debug
-        if 'with_odm' in model.model_name:
-            print('Skipping ',model.model_name)
-            continue
-        ##############
-        else:
-            print('')
-            pass
+        # if 'with_odm' not in model.model_name:
+        #     print('Skipping ',model.model_name)
+        #     continue
+        # ##############
+        # else:
+        #     print('')
+        #     pass
 
         print('Model name: ',model.model_name)
         #load input files

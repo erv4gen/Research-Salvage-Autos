@@ -35,7 +35,7 @@ exact_match = ['Make','Model_short','Model_Age','Prim_Damage']
 
 ModelType = namedtuple('ModelType',['model_name','smalb','big_b','match_within','pct_match','truncated'])
 
-models = [
+models_pop = [
     ModelType('Pop_10p_500k1m_with_odm_no_trunc',5e5,1e6,.1,['Actual_Cash_Value_adj','Odometer_Replace'],False)
     ,ModelType('Pop_05p_500k1m_with_odm_no_trunc',5e5,1e6,.05,['Actual_Cash_Value_adj','Odometer_Replace'],False)
     ,ModelType('Pop_20p_500k1m_with_odm_no_trunc',5e5,1e6,.20,['Actual_Cash_Value_adj','Odometer_Replace'],False)
@@ -64,20 +64,83 @@ models = [
     
 ]
 
-# model.model_name = '10p_1mk1m_no_odm_trunc'
-#label big cities
-#model.smalb = 5e5
-# model.smalb = 1e6
-# model.big_b = 1e6
-# model.match_within = .1
+
+models_crime = [
+    ModelType('Crime_10p_5k_with_odm_no_trunc',5e3,5e3,.1,['Actual_Cash_Value_adj','Odometer_Replace'],False)
+    ,ModelType('Crime_05p_5k_with_odm_no_trunc',5e3,5e3,.05,['Actual_Cash_Value_adj','Odometer_Replace'],False)
+    ,ModelType('Crime_20p_5k_with_odm_no_trunc',5e3,5e3,.20,['Actual_Cash_Value_adj','Odometer_Replace'],False)
+
+
+    
+    ,ModelType('Crime_10p_5k_with_odm_trunc',5e3,5e3,.1,['Actual_Cash_Value_adj','Odometer_Replace'],True)
+    ,ModelType('Crime_05p_5k_with_odm_trunc',5e3,5e3,.05,['Actual_Cash_Value_adj','Odometer_Replace'],True)
+    ,ModelType('Crime_20p_5k_with_odm_trunc',5e3,5e3,.2,['Actual_Cash_Value_adj','Odometer_Replace'],True)
+
+
+    
+    ,ModelType('Crime_10p_5e31m_no_odm_trunc',5e3,5e3,.1,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Crime_05p_5e31m_no_odm_trunc',5e3,5e3,.05,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Crime_20p_5e31m_no_odm_trunc',5e3,5e3,.2,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Crime_05p_5e31m_no_odm_no_trunc',5e3,5e3,.05,['Actual_Cash_Value_adj'],False)
+    
+]
+
+models_unemp = [
+    ModelType('Unemp_10p_5k_with_odm_no_trunc',5.,5.,.1,['Actual_Cash_Value_adj','Odometer_Replace'],False)
+    ,ModelType('Unemp_05p_5k_with_odm_no_trunc',5.,5.,.05,['Actual_Cash_Value_adj','Odometer_Replace'],False)
+    ,ModelType('Unemp_20p_5k_with_odm_no_trunc',5.,5.,.20,['Actual_Cash_Value_adj','Odometer_Replace'],False)
+
+
+    
+    ,ModelType('Unemp_10p_5k_with_odm_trunc',5.,5.,.1,['Actual_Cash_Value_adj','Odometer_Replace'],True)
+    ,ModelType('Unemp_05p_5k_with_odm_trunc',5.,5.,.05,['Actual_Cash_Value_adj','Odometer_Replace'],True)
+    ,ModelType('Unemp_20p_5k_with_odm_trunc',5.,5.,.2,['Actual_Cash_Value_adj','Odometer_Replace'],True)
+
+
+    
+    ,ModelType('Unemp_10p_5.1m_no_odm_trunc',5.,5.,.1,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Unemp_05p_5.1m_no_odm_trunc',5.,5.,.05,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Unemp_20p_5.1m_no_odm_trunc',5.,5.,.2,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Unemp_05p_5.1m_no_odm_no_trunc',5.,5.,.05,['Actual_Cash_Value_adj'],False)
+]
+
+models_income = [
+    ModelType('Income_10p_5k_with_odm_no_trunc',5e4,5e4,.1,['Actual_Cash_Value_adj','Odometer_Replace'],False)
+    ,ModelType('Income_05p_5k_with_odm_no_trunc',5e4,5e4,.05,['Actual_Cash_Value_adj','Odometer_Replace'],False)
+    ,ModelType('Income_20p_5k_with_odm_no_trunc',5e4,5e4,.20,['Actual_Cash_Value_adj','Odometer_Replace'],False)
+
+
+    
+    ,ModelType('Income_10p_5k_with_odm_trunc',5e4,5e4,.1,['Actual_Cash_Value_adj','Odometer_Replace'],True)
+    ,ModelType('Income_05p_5k_with_odm_trunc',5e4,5e4,.05,['Actual_Cash_Value_adj','Odometer_Replace'],True)
+    ,ModelType('Income_20p_5k_with_odm_trunc',5e4,5e4,.2,['Actual_Cash_Value_adj','Odometer_Replace'],True)
+
+
+    
+    ,ModelType('Income_10p_5e41m_no_odm_trunc',5e4,5e4,.1,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Income_05p_5e41m_no_odm_trunc',5e4,5e4,.05,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Income_20p_5e41m_no_odm_trunc',5e4,5e4,.2,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Income_05p_5e41m_no_odm_no_trunc',5e4,5e4,.05,['Actual_Cash_Value_adj'],False)
+]
+
+
+#run_on = 'CENSUS_closest'
+# run_on = 'GRNDTOT_closest'
+# run_on = 'Unemp_pct_closest'
+run_on = 'Income_adj_closest'
+models_dict = dict(CENSUS_closest = models_pop 
+                    ,GRNDTOT_closest = models_crime
+                    ,Unemp_pct_closest=models_unemp
+                    ,Income_adj_closest = models_income
+                    )
 def main():
-    for id, model in enumerate(models):
+    for id, model in enumerate(models_dict[run_on]):
 
         car_demo_joined = Temp.load_obj('car_demo_joined')
         
-        car_demo_joined.loc[car_demo_joined['CENSUS_closest']<model.smalb , 'is_big_city'] = 0
-        car_demo_joined.loc[car_demo_joined['CENSUS_closest']>model.big_b, 'is_big_city'] = 1
-        car_demo_joined = car_demo_joined.dropna(subset = ['is_big_city'])
+        car_demo_joined.loc[car_demo_joined[run_on]<=model.smalb , 'group0'] = 0
+        car_demo_joined.loc[car_demo_joined[run_on]>model.big_b, 'group0'] = 1
+        car_demo_joined = car_demo_joined.dropna(subset = ['group0'])
 
 
 
@@ -95,7 +158,7 @@ def main():
 
 
 
-        print('Model name: ',model.model_name,' #',id,' of ',len(models),' \n'
+        print('Model name: ',model.model_name,' #',id,' of ',len(models_dict[run_on]),' \n'
             ,'                                               small county boundary:' , model.smalb, ' bigg county boundary', model.big_b,
             '\nRows excluded from the analysis:',original_size - car_demo_joined.shape[0]
         ,'\nLooking for a match within ', model.match_within,' for ', model.pct_match
@@ -143,10 +206,10 @@ def main():
         for grp , df in tqdm(car_demo_joined.groupby(exact_match)):
             if len(df) <2:
                 continue
-            is_big_city_bs = df.loc[df.is_big_city == 1]
-            is_small_city_df = df.loc[df.is_big_city == 0]
+            group0_df = df.loc[df.group0 == 1]
+            group1_df = df.loc[df.group0 == 0]
 
-            match_l.append(find_match_expected(is_small_city_df,is_big_city_bs))
+            match_l.append(find_match_expected(group1_df,group0_df))
             i+=1
 
             # if i>550:
