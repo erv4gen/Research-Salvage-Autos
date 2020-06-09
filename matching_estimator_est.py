@@ -78,10 +78,10 @@ models_crime = [
 
 
     
-    ,ModelType('Crime_10p_5e31m_no_odm_trunc',5e3,5e3,.1,['Actual_Cash_Value_adj'],True)
-    ,ModelType('Crime_05p_5e31m_no_odm_trunc',5e3,5e3,.05,['Actual_Cash_Value_adj'],True)
-    ,ModelType('Crime_20p_5e31m_no_odm_trunc',5e3,5e3,.2,['Actual_Cash_Value_adj'],True)
-    ,ModelType('Crime_05p_5e31m_no_odm_no_trunc',5e3,5e3,.05,['Actual_Cash_Value_adj'],False)
+    ,ModelType('Crime_10p_5k_no_odm_trunc',5e3,5e3,.1,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Crime_05p_5k_no_odm_trunc',5e3,5e3,.05,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Crime_20p_5k_no_odm_trunc',5e3,5e3,.2,['Actual_Cash_Value_adj'],True)
+    ,ModelType('Crime_05p_5k_no_odm_no_trunc',5e3,5e3,.05,['Actual_Cash_Value_adj'],False)
     
 ]
 
@@ -124,10 +124,10 @@ models_income = [
 ]
 
 
-#run_on = 'CENSUS_closest'
+run_on = 'CENSUS_closest'
 # run_on = 'GRNDTOT_closest'
 # run_on = 'Unemp_pct_closest'
-run_on = 'Income_adj_closest'
+# run_on = 'Income_adj_closest'
 models_dict = dict(CENSUS_closest = models_pop 
                     ,GRNDTOT_closest = models_crime
                     ,Unemp_pct_closest=models_unemp
@@ -138,9 +138,9 @@ def main():
 
         car_demo_joined = Temp.load_obj('car_demo_joined')
         
-        car_demo_joined.loc[car_demo_joined[run_on]<=model.smalb , 'group0'] = 0
-        car_demo_joined.loc[car_demo_joined[run_on]>model.big_b, 'group0'] = 1
-        car_demo_joined = car_demo_joined.dropna(subset = ['group0'])
+        car_demo_joined.loc[car_demo_joined[run_on]<=model.smalb , 'group'] = 0
+        car_demo_joined.loc[car_demo_joined[run_on]>model.big_b, 'group'] = 1
+        car_demo_joined = car_demo_joined.dropna(subset = ['group'])
 
 
 
@@ -206,10 +206,11 @@ def main():
         for grp , df in tqdm(car_demo_joined.groupby(exact_match)):
             if len(df) <2:
                 continue
-            group0_df = df.loc[df.group0 == 1]
-            group1_df = df.loc[df.group0 == 0]
+            group0_df = df.loc[df.group == 0]
+            group1_df = df.loc[df.group == 1]
+            
 
-            match_l.append(find_match_expected(group1_df,group0_df))
+            match_l.append(find_match_expected(group0_df,group1_df))
             i+=1
 
             # if i>550:
